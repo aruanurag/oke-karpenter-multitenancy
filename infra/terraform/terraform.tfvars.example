@@ -1,0 +1,39 @@
+tenancy_ocid       = "ocid1.tenancy.oc1..example"
+
+# Option A: use an existing compartment
+create_compartment = false
+compartment_ocid   = "ocid1.compartment.oc1..example"
+
+# Option B: create a new compartment (uncomment and set values)
+# create_compartment          = true
+# parent_compartment_ocid     = "ocid1.tenancy.oc1..example"
+# new_compartment_name        = "oke-karpenter"
+# new_compartment_description = "Compartment for OKE and Karpenter resources"
+
+cluster_name        = "oke-karpenter"
+# Optional version pin; if omitted, latest compatible version is auto-selected.
+# kubernetes_version = "v1.34.2"
+## Optional
+# ssh_public_key      = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ..."
+
+# Optional override; if omitted, Terraform auto-selects a compatible OKE image.
+# node_image_id = "ocid1.image.oc1.iad.example"
+
+bootstrap_node_count      = 1
+bootstrap_node_shape      = "VM.Standard.A1.Flex"
+bootstrap_node_ocpus      = 1
+bootstrap_node_memory_gbs = 6
+
+kube_api_endpoint_is_public = true
+
+karpenter_dynamic_group_name = "oke-karpenter-dg"
+# Optional override; if omitted, Terraform derives it from target compartment.
+# karpenter_dynamic_group_matching_rule = "ALL {resource.type = 'cluster', resource.compartment.id = 'ocid1.compartment.oc1..example'}"
+
+karpenter_policy_name = "oke-karpenter-policy"
+# Optional: leave empty to skip creating IAM policy in this module.
+# karpenter_policy_statements = [
+#   "Allow dynamic-group oke-karpenter-dg to manage instance-family in compartment id ocid1.compartment.oc1..example",
+#   "Allow dynamic-group oke-karpenter-dg to use virtual-network-family in compartment id ocid1.compartment.oc1..example",
+#   "Allow dynamic-group oke-karpenter-dg to manage cluster-node-pools in compartment id ocid1.compartment.oc1..example"
+# ]
