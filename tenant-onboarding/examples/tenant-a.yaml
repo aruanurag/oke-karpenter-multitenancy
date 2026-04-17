@@ -1,0 +1,27 @@
+tenant:
+  id: tenant-a
+  name: tenant-a
+  namespace: tenant-a
+
+nodePool:
+  nodeClassRef:
+    name: a1-baseline
+  limits:
+    cpu: "32"
+    memory: 128Gi
+
+quota:
+  hard:
+    requests.cpu: "24"
+    requests.memory: 96Gi
+    limits.cpu: "32"
+    limits.memory: 128Gi
+    pods: "200"
+
+sampleServices:
+  ui:
+    enabled: true
+    replicaCount: 2
+  integration:
+    enabled: true
+    replicaCount: 2

@@ -1,0 +1,15 @@
+{{- if .Values.rbac.enabled }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tenant-access
+  namespace: {{ include "tenant-onboarding.namespace" . }}
+subjects:
+  - kind: {{ .Values.rbac.subjectKind }}
+    name: {{ required "rbac.subjectName is required when rbac.enabled=true" .Values.rbac.subjectName }}
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: {{ .Values.rbac.roleName }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

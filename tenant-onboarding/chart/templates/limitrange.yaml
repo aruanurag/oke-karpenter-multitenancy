@@ -1,0 +1,14 @@
+{{- if .Values.limitRange.enabled }}
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: tenant-limits
+  namespace: {{ include "tenant-onboarding.namespace" . }}
+spec:
+  limits:
+    - type: Container
+      default:
+{{ toYaml .Values.limitRange.default | indent 8 }}
+      defaultRequest:
+{{ toYaml .Values.limitRange.defaultRequest | indent 8 }}
+{{- end }}

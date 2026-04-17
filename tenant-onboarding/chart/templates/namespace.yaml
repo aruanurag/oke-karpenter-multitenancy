@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ include "tenant-onboarding.namespace" . }}
+  labels:
+    platform.example.com/tenant: {{ include "tenant-onboarding.tenantId" . | quote }}
+{{- if .Values.tenant.labels }}
+{{ toYaml .Values.tenant.labels | indent 4 }}
+{{- end }}

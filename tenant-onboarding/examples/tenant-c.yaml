@@ -1,0 +1,19 @@
+tenant:
+  id: tenant-c
+  name: tenant-c
+  namespace: tenant-c
+
+nodePool:
+  nodeClassRef:
+    name: a1-baseline
+  limits:
+    cpu: "16"
+    memory: 64Gi
+
+quota:
+  hard:
+    requests.cpu: "12"
+    requests.memory: 48Gi
+    limits.cpu: "16"
+    limits.memory: 64Gi
+    pods: "120"

@@ -1,0 +1,59 @@
+{{- if .Values.nodePool.enabled }}
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: {{ include "tenant-onboarding.nodePoolName" . }}
+  labels:
+    platform.example.com/tenant: {{ include "tenant-onboarding.tenantId" . | quote }}
+spec:
+  limits:
+    cpu: {{ .Values.nodePool.limits.cpu | quote }}
+    memory: {{ .Values.nodePool.limits.memory | quote }}
+  disruption:
+    consolidationPolicy: {{ .Values.nodePool.disruption.consolidationPolicy | quote }}
+    consolidateAfter: {{ .Values.nodePool.disruption.consolidateAfter | quote }}
+  template:
+    metadata:
+      labels:
+{{- if .Values.isolation.enabled }}
+        {{ .Values.isolation.nodeLabelKey }}: {{ include "tenant-onboarding.nodeLabelValue" . | quote }}
+{{- end }}
+        platform.example.com/tenant: {{ include "tenant-onboarding.tenantId" . | quote }}
+    spec:
+      expireAfter: {{ .Values.nodePool.template.expireAfter | quote }}
+      nodeClassRef:
+        group: {{ .Values.nodePool.nodeClassRef.group | quote }}
+        kind: {{ .Values.nodePool.nodeClassRef.kind | quote }}
+        name: {{ .Values.nodePool.nodeClassRef.name | quote }}
+{{- if and .Values.isolation.enabled .Values.isolation.taint.enabled }}
+      taints:
+        - key: {{ .Values.isolation.taint.key | quote }}
+          value: {{ include "tenant-onboarding.taintValue" . | quote }}
+          effect: {{ .Values.isolation.taint.effect | quote }}
+{{- end }}
+      requirements:
+        - key: kubernetes.io/os
+          operator: In
+          values:
+{{ toYaml .Values.nodePool.template.requirements.os | indent 12 }}
+        - key: kubernetes.io/arch
+          operator: In
+          values:
+{{ toYaml .Values.nodePool.template.requirements.arch | indent 12 }}
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values:
+{{ toYaml .Values.nodePool.template.requirements.capacityType | indent 12 }}
+{{- if .Values.nodePool.template.requirements.instanceShapes }}
+        - key: oci.oraclecloud.com/instance-shape
+          operator: In
+          values:
+{{ toYaml .Values.nodePool.template.requirements.instanceShapes | indent 12 }}
+{{- end }}
+{{- if .Values.nodePool.template.requirements.instanceTypes }}
+        - key: node.kubernetes.io/instance-type
+          operator: In
+          values:
+{{ toYaml .Values.nodePool.template.requirements.instanceTypes | indent 12 }}
+{{- end }}
+{{- end }}

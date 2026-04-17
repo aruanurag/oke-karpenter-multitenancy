@@ -1,0 +1,12 @@
+settings:
+  clusterCompartmentId: "ocid1.compartment.oc1..aaaaaaaahzzj73ucineo3t26csb2dqnhjdxasm3zdtw2qsk7ms7snwqrk72q"
+  vcnCompartmentId: "ocid1.compartment.oc1..aaaaaaaahzzj73ucineo3t26csb2dqnhjdxasm3zdtw2qsk7ms7snwqrk72q"
+  apiserverEndpoint: "10.0.0.3"
+  ociVcnIpNative: true
+
+serviceAccount:
+  create: true
+  name: karpenter
+
+controller:
+  replicas: 1

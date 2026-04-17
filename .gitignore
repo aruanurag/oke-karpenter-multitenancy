@@ -1,25 +1,19 @@
 # macOS
 .DS_Store
+._*
 
 # IDE/editor
 .idea/
 .vscode/
+*.swp
+*.swo
+*~
 
-# Terraform
-**/.terraform/*
-*.tfstate
-*.tfstate.*
-crash.log
-crash.*.log
-*.tfvars
-*.tfvars.json
-override.tf
-override.tf.json
-*_override.tf
-*_override.tf.json
-.terraform.lock.hcl
+# Helm / Kubernetes local artifacts
+*.tgz
+charts/
+helm-output*.yaml
+render*.yaml
 
-# Terraform plan outputs
-*.tfplan
-tfplan
-plan.out
+# Local scratch
+.tmp/

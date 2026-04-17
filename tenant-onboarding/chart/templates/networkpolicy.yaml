@@ -1,0 +1,16 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tenant-default-deny
+  namespace: {{ include "tenant-onboarding.namespace" . }}
+spec:
+  podSelector: {}
+  policyTypes:
+{{- if .Values.networkPolicy.defaultDenyIngress }}
+    - Ingress
+{{- end }}
+{{- if .Values.networkPolicy.defaultDenyEgress }}
+    - Egress
+{{- end }}
+{{- end }}

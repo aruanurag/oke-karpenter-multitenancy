@@ -1,0 +1,18 @@
+{{- if .Values.workloadContract.createNamespaceDefaultsConfigMap }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tenant-scheduling-contract
+  namespace: {{ include "tenant-onboarding.namespace" . }}
+data:
+  README: |
+    Workloads in this namespace should include:
+    - nodeSelector:
+        {{ .Values.isolation.nodeLabelKey }}: {{ include "tenant-onboarding.nodeLabelValue" . }}
+{{- if .Values.isolation.taint.enabled }}
+    - toleration:
+        key: {{ .Values.isolation.taint.key }}
+        value: {{ include "tenant-onboarding.taintValue" . }}
+        effect: {{ .Values.isolation.taint.effect }}
+{{- end }}
+{{- end }}

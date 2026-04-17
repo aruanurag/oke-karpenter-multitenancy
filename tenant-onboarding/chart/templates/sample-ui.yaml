@@ -1,0 +1,52 @@
+{{- if .Values.sampleServices.ui.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui
+  namespace: {{ include "tenant-onboarding.namespace" . }}
+  labels:
+    app.kubernetes.io/name: ui
+    app.kubernetes.io/part-of: tenant-samples
+    platform.example.com/tenant: {{ include "tenant-onboarding.tenantId" . | quote }}
+spec:
+  replicas: {{ .Values.sampleServices.ui.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ui
+        app.kubernetes.io/part-of: tenant-samples
+        platform.example.com/tenant: {{ include "tenant-onboarding.tenantId" . | quote }}
+    spec:
+{{ include "tenant-onboarding.workloadNodeSelector" . | indent 6 }}
+{{ include "tenant-onboarding.workloadTolerations" . | indent 6 }}
+      containers:
+        - name: ui
+          image: "{{ .Values.sampleServices.ui.image.repository }}:{{ .Values.sampleServices.ui.image.tag }}"
+          imagePullPolicy: {{ .Values.sampleServices.ui.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.sampleServices.ui.containerPort }}
+          resources:
+{{ toYaml .Values.sampleServices.ui.resources | indent 12 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui
+  namespace: {{ include "tenant-onboarding.namespace" . }}
+  labels:
+    app.kubernetes.io/name: ui
+    app.kubernetes.io/part-of: tenant-samples
+    platform.example.com/tenant: {{ include "tenant-onboarding.tenantId" . | quote }}
+spec:
+  type: {{ .Values.sampleServices.ui.service.type }}
+  selector:
+    app.kubernetes.io/name: ui
+  ports:
+    - name: http
+      port: {{ .Values.sampleServices.ui.service.port }}
+      targetPort: {{ .Values.sampleServices.ui.service.targetPort }}
+{{- end }}

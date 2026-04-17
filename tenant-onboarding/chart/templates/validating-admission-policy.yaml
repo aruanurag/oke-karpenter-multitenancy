@@ -1,0 +1,40 @@
+{{- if .Values.admissionPolicy.enabled }}
+{{- $ns := include "tenant-onboarding.namespace" . -}}
+{{- $nodeKey := .Values.isolation.nodeLabelKey -}}
+{{- $nodeVal := include "tenant-onboarding.nodeLabelValue" . -}}
+{{- $taintKey := .Values.isolation.taint.key -}}
+{{- $taintVal := include "tenant-onboarding.taintValue" . -}}
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: tenant-scheduling-{{ include "tenant-onboarding.tenantId" . }}
+spec:
+  failurePolicy: {{ .Values.admissionPolicy.failurePolicy }}
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+  validations:
+{{- if .Values.admissionPolicy.enforceNodeSelector }}
+    - expression: "object.metadata.namespace != '{{ $ns }}' || (has(object.spec.nodeSelector) && object.spec.nodeSelector['{{ $nodeKey }}'] == '{{ $nodeVal }}')"
+      message: "Pods in this tenant namespace must set required tenant nodeSelector"
+{{- end }}
+{{- if and .Values.admissionPolicy.enforceToleration .Values.isolation.taint.enabled }}
+    - expression: "object.metadata.namespace != '{{ $ns }}' || (has(object.spec.tolerations) && object.spec.tolerations.exists(t, has(t.key) && t.key == '{{ $taintKey }}' && has(t.value) && t.value == '{{ $taintVal }}'))"
+      message: "Pods in this tenant namespace must include required tenant toleration"
+{{- end }}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: tenant-scheduling-{{ include "tenant-onboarding.tenantId" . }}
+spec:
+  policyName: tenant-scheduling-{{ include "tenant-onboarding.tenantId" . }}
+  validationActions: [Deny]
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        platform.example.com/tenant: {{ include "tenant-onboarding.tenantId" . | quote }}
+{{- end }}

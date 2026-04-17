@@ -1,0 +1,6 @@
+apiVersion: v2
+name: tenant-onboarding
+description: Per-tenant onboarding chart for namespace isolation + Karpenter NodePool
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
