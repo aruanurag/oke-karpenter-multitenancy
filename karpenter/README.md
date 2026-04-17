@@ -63,3 +63,64 @@ kubectl get crd | rg -i 'karpenter|ocinodeclass|nativepodnetwork'
 
 7. Karpenter NodePool visibility:
    - Karpenter `NodePool`/`NodeClaim` are Kubernetes CRDs and do not appear as OKE managed node pools in OCI Console.
+
+## Kubernetes Debug Commands Used
+
+Use these commands during rollout and incident triage.
+
+1. Check Karpenter controller health and logs:
+```bash
+kubectl get pods -n karpenter
+kubectl logs -n karpenter deploy/karpenter --tail=200
+```
+Shows controller status and recent reconciliation errors.
+
+2. Inspect NodePools and NodeClaims:
+```bash
+kubectl get nodepools
+kubectl describe nodepool baseline
+kubectl get nodeclaims -o wide
+kubectl describe nodeclaim <nodeclaim-name>
+```
+Verifies provisioning intent, limits, and per-claim launch/registration conditions.
+
+3. Inspect OCI provider class:
+```bash
+kubectl get ocinodeclass a1-baseline -o yaml
+kubectl describe ocinodeclass a1-baseline
+```
+Validates subnet/image/shape and readiness of provider-side config.
+
+4. Watch nodes and Karpenter labels:
+```bash
+kubectl get nodes -L karpenter.sh/nodepool,oci.oraclecloud.com/instance-shape
+```
+Confirms which nodes are Karpenter-managed and their shape.
+
+5. Check scheduling failures on workloads:
+```bash
+kubectl get pods -A
+kubectl describe pod -n <ns> <pod-name>
+kubectl get events -n <ns> --sort-by=.metadata.creationTimestamp | tail -n 50
+```
+Pinpoints whether failures are CPU/taints/nodepool limits vs image/CNI issues.
+
+6. Native Pod Networking (NPN) health:
+```bash
+kubectl get npn
+kubectl describe npn <npn-name>
+```
+Critical for OCI VCN native CNI; identifies `FailedToCreatePrivateIP` and subnet CIDR exhaustion.
+
+7. CNI/OCI system daemon health:
+```bash
+kubectl get pods -n kube-system -o wide | rg -i 'vcn-native-ip-cni|csi-oci|cni|npn'
+```
+Confirms required node-level networking components are running on new nodes.
+
+8. Restart provisioning test cleanly:
+```bash
+kubectl delete nodeclaims --all
+kubectl delete pod -n default -l app=inflate
+```
+Forces fresh NodeClaims and pod scheduling after config changes.
