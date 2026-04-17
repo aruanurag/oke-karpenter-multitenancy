@@ -1,7 +1,8 @@
 settings:
-  clusterCompartmentId: "ocid1.compartment.oc1..aaaaaaaahzzj73ucineo3t26csb2dqnhjdxasm3zdtw2qsk7ms7snwqrk72q"
-  vcnCompartmentId: "ocid1.compartment.oc1..aaaaaaaahzzj73ucineo3t26csb2dqnhjdxasm3zdtw2qsk7ms7snwqrk72q"
-  apiserverEndpoint: "10.0.0.3"
+  clusterCompartmentId: "<cluster_compartment_ocid>"
+  vcnCompartmentId: "<vcn_compartment_ocid>"
+  # Private API server IP only (no scheme, no port), for example "10.0.0.3"
+  apiserverEndpoint: "<private_apiserver_ip>"
   ociVcnIpNative: true
 
 serviceAccount:
