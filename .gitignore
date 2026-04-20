@@ -17,3 +17,6 @@ render*.yaml
 
 # Local scratch
 .tmp/
+
+# Local environment overrides (never commit)
+karpenter/values_local.yaml

@@ -1,7 +1,24 @@
-# Karpenter Deployment
+# Karpenter Deployment (VCN-native + Flannel)
 
-This directory is intentionally minimal:
-- `values.yaml`: the Helm values used to deploy Karpenter on OKE.
+This directory supports deploying Karpenter with either OKE networking mode.
+
+Regular day-2 tenant onboarding should use the Helm flow in `tenant-onboarding/`.
+The YAML files in `karpenter/examples/` are reference examples for platform setup/testing.
+
+Step-by-step runbooks:
+- VCN-native: `docs/deploy-vcn-native.md`
+- Flannel: `docs/deploy-flannel.md`
+
+## Files
+
+- `values/vcn-native.values.yaml`: values for VCN-native mode (`ociVcnIpNative: true`)
+- `values/flannel.values.yaml`: values for Flannel mode (`ociVcnIpNative: false`)
+- `examples/nodeclass-vcn-native.yaml`: OCINodeClass example for VCN-native
+- `examples/nodeclass-flannel.yaml`: OCINodeClass example for Flannel
+- `examples/nodepool-example.yaml`: NodePool reference YAML (points to an existing NodeClass)
+- `scripts/deploy-karpenter.sh`: helper to deploy per mode
+- `scripts/validate-cluster.sh`: basic post-deploy checks
+- `scripts/smoke-test.sh`: quick operational checks
 
 ## Prerequisites
 
@@ -10,29 +27,63 @@ This directory is intentionally minimal:
 3. OCI IAM policy and dynamic group permissions for node join.
 4. Karpenter OCI Helm chart available (downloaded from your internal artifact/source).
 
-Karpenter IAM setup reference:
-- https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/conteng-kpo.htm#conteng-kpo-iam
-
-Quick cluster creation (OKE quick create):
-- https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingclusterusingoke_topic-Using_the_Console_to_create_a_Quick_Cluster_with_Default_Settings.htm
+References:
+- Karpenter IAM setup: https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/conteng-kpo.htm#conteng-kpo-iam
+- OKE Quick Cluster: https://docs.oracle.com/en-us/iaas/Content/ContEng/Tasks/contengcreatingclusterusingoke_topic-Using_the_Console_to_create_a_Quick_Cluster_with_Default_Settings.htm
 
 ## Deploy Karpenter
 
 ```bash
 CHART_PATH="/path/to/karpenter-provider-oci/chart"
 
+# VCN-native mode
+./karpenter/scripts/deploy-karpenter.sh vcn-native "$CHART_PATH"
+
+# Flannel mode
+./karpenter/scripts/deploy-karpenter.sh flannel "$CHART_PATH"
+```
+
+For local/private environment values, use `karpenter/values_local.yaml` (gitignored) as an overlay:
+
+```bash
 helm upgrade --install karpenter "$CHART_PATH" \
   -n karpenter \
   --create-namespace \
-  -f ./karpenter/values.yaml
+  -f ./karpenter/values/vcn-native.values.yaml \
+  -f ./karpenter/values_local.yaml
+```
+
+## Apply NodeClass Example
+
+```bash
+# choose one based on cluster networking mode
+kubectl apply -f ./karpenter/examples/nodeclass-vcn-native.yaml
+# or
+kubectl apply -f ./karpenter/examples/nodeclass-flannel.yaml
+```
+
+## Apply NodePool Example (Optional Reference)
+
+```bash
+# edit <nodeclass_name> in file first
+kubectl apply -f ./karpenter/examples/nodepool-example.yaml
 ```
 
 ## Verify
 
 ```bash
-kubectl get pods -n karpenter
-kubectl get crd | rg -i 'karpenter|ocinodeclass|nativepodnetwork'
+./karpenter/scripts/validate-cluster.sh
 ```
+
+## Mode Notes
+
+1. VCN-native mode
+- Requires NodeClass `secondaryVnicConfigs`.
+- Subnet CIDR sizing/contiguous capacity is critical for pod IP allocation.
+
+2. Flannel mode
+- Does not require VCN-native pod IP allocation behavior.
+- Useful for simpler bootstrap and validation.
 
 ## Troubleshooting / Gotchas Found
 
@@ -42,22 +93,22 @@ kubectl get crd | rg -i 'karpenter|ocinodeclass|nativepodnetwork'
 
 2. Incorrect API server endpoint in values:
    - Symptom: nodes launch but fail registration.
-   - Fix: set `settings.apiserverEndpoint` to the **private API server IP only** (no scheme, no port), for example `10.0.0.3`, in `values.yaml`, then redeploy chart.
+   - Fix: set `settings.apiserverEndpoint` to the private API server IP only (no scheme, no port), for example `10.0.0.3`, then redeploy.
 
 3. Shape/image/arch mismatch:
    - Symptom: `no image suitable for shape ...`.
-   - Fix: ensure NodePool requirements and NodeClass shape/image are compatible (for example E5 + amd64).
+   - Fix: ensure NodePool requirements and NodeClass shape/image are compatible.
 
-4. Missing `secondaryVnicConfigs` in `OCINodeClass`:
-   - Symptom: NodeClass/network reconcile failure for native pod networking.
+4. Missing `secondaryVnicConfigs` in `OCINodeClass` (VCN-native):
+   - Symptom: NodeClass/network reconcile failure.
    - Fix: define `spec.networkConfig.secondaryVnicConfigs`.
 
-5. Pod CNI sandbox failures `unable to allocate IP address`:
+5. Pod CNI sandbox failures `unable to allocate IP address` (VCN-native):
    - Symptom: pods stuck `ContainerCreating`, `NPN` shows `FailedToCreatePrivateIP`.
    - Root cause: subnet IP exhaustion/fragmentation for flex CIDR allocation.
    - Fix: use larger contiguous pod IP space (secondary CIDR or dedicated larger subnet), then recycle NodeClaims.
 
-6. Pods pending even after networking fixed:
+6. Pods pending even after networking is healthy:
    - Symptom: `Insufficient cpu` and `all available instance types exceed limits for nodepool`.
    - Fix: increase `NodePool.spec.limits.cpu` and verify pod requests/instance shape sizing.
 
@@ -66,61 +117,44 @@ kubectl get crd | rg -i 'karpenter|ocinodeclass|nativepodnetwork'
 
 ## Kubernetes Debug Commands Used
 
-Use these commands during rollout and incident triage.
-
-1. Check Karpenter controller health and logs:
+1. Controller health and logs:
 ```bash
 kubectl get pods -n karpenter
 kubectl logs -n karpenter deploy/karpenter --tail=200
 ```
-Shows controller status and recent reconciliation errors.
 
-2. Inspect NodePools and NodeClaims:
+2. NodePools and NodeClaims:
 ```bash
 kubectl get nodepools
-kubectl describe nodepool baseline
+kubectl describe nodepool <name>
 kubectl get nodeclaims -o wide
-kubectl describe nodeclaim <nodeclaim-name>
+kubectl describe nodeclaim <name>
 ```
-Verifies provisioning intent, limits, and per-claim launch/registration conditions.
 
-3. Inspect OCI provider class:
+3. OCI provider class:
 ```bash
-kubectl get ocinodeclass a1-baseline -o yaml
-kubectl describe ocinodeclass a1-baseline
+kubectl get ocinodeclass <name> -o yaml
+kubectl describe ocinodeclass <name>
 ```
-Validates subnet/image/shape and readiness of provider-side config.
 
-4. Watch nodes and Karpenter labels:
+4. Node labels/shapes:
 ```bash
 kubectl get nodes -L karpenter.sh/nodepool,oci.oraclecloud.com/instance-shape
 ```
-Confirms which nodes are Karpenter-managed and their shape.
 
-5. Check scheduling failures on workloads:
+5. Scheduling failure triage:
 ```bash
-kubectl get pods -A
-kubectl describe pod -n <ns> <pod-name>
+kubectl describe pod -n <ns> <pod>
 kubectl get events -n <ns> --sort-by=.metadata.creationTimestamp | tail -n 50
 ```
-Pinpoints whether failures are CPU/taints/nodepool limits vs image/CNI issues.
 
-6. Native Pod Networking (NPN) health:
+6. VCN-native NPN checks:
 ```bash
 kubectl get npn
-kubectl describe npn <npn-name>
+kubectl describe npn <name>
 ```
-Critical for OCI VCN native CNI; identifies `FailedToCreatePrivateIP` and subnet CIDR exhaustion.
 
-7. CNI/OCI system daemon health:
+7. System daemon health:
 ```bash
 kubectl get pods -n kube-system -o wide | rg -i 'vcn-native-ip-cni|csi-oci|cni|npn'
 ```
-Confirms required node-level networking components are running on new nodes.
-
-8. Restart provisioning test cleanly:
-```bash
-kubectl delete nodeclaims --all
-kubectl delete pod -n default -l app=inflate
-```
-Forces fresh NodeClaims and pod scheduling after config changes.

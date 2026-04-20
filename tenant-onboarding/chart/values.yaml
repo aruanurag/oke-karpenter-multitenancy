@@ -33,6 +33,29 @@ nodePool:
       instanceShapes:
         - VM.Standard.E5.Flex
 
+nodeClass:
+  # When true, the chart creates an OCINodeClass for this tenant.
+  # When false, NodePool references nodePool.nodeClassRef.name.
+  create: false
+  nameOverride: ""
+  # Raw OCINodeClass spec map used only when create=true.
+  # Example:
+  # spec:
+  #   nodeCompartmentId: <node_compartment_ocid>
+  #   shapeConfigs:
+  #     - ocpus: 2
+  #       memoryInGbs: 16
+  #   networkConfig:
+  #     primaryVnicConfig:
+  #       subnetConfig:
+  #         subnetId: <node_subnet_ocid>
+  #   volumeConfig:
+  #     bootVolumeConfig:
+  #       imageConfig:
+  #         imageType: OKEImage
+  #         imageId: <oke_image_ocid>
+  spec: {}
+
 isolation:
   enabled: true
   nodeLabelKey: platform.example.com/tenant

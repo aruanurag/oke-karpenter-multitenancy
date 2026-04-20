@@ -5,6 +5,7 @@ Per-tenant install that creates:
 - Quota / LimitRange
 - Optional NetworkPolicy and tenant RBAC
 - Dedicated Karpenter NodePool (no NodeClaims managed directly)
+- Optional tenant-specific `OCINodeClass`
 - Optional native ValidatingAdmissionPolicy for scheduling contract enforcement
 - Optional sample services (`ui` and `integration`) with tenant-aware scheduling
 
@@ -12,10 +13,13 @@ Per-tenant install that creates:
 
 ```bash
 helm install tenant-a ./tenant-onboarding/chart \
-  --set tenant.id=tenant-a \
-  --set tenant.namespace=tenant-a \
-  --set nodePool.nodeClassRef.name=a1-baseline
+  -f ./tenant-onboarding/examples/tenant-a.yaml
 ```
+
+Update placeholder values in `tenant-onboarding/examples/tenant-a.yaml` before install:
+- `<node_compartment_ocid>`
+- `<node_subnet_ocid>`
+- `<oke_image_ocid>`
 
 ## Upgrade tenant size
 
@@ -38,7 +42,10 @@ Karpenter NodeClaims are owned by Karpenter and will drain/terminate as workload
 
 ## Notes
 
-- `nodePool.nodeClassRef.name` should usually point to a shared, pre-created `OCINodeClass`.
+- By default, chart can either reference an existing `OCINodeClass` or create one.
+- If you want the chart to create NodeClass too, set:
+  - `nodeClass.create=true`
+  - `nodeClass.spec={...}` (raw `OCINodeClass.spec`)
 - Keep `isolation.enabled=true` to stamp tenant label + taint on tenant nodes.
 - For strict enforcement, either:
   - enable `admissionPolicy.enabled=true` (native ValidatingAdmissionPolicy), or

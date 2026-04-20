@@ -24,7 +24,7 @@ spec:
       nodeClassRef:
         group: {{ .Values.nodePool.nodeClassRef.group | quote }}
         kind: {{ .Values.nodePool.nodeClassRef.kind | quote }}
-        name: {{ .Values.nodePool.nodeClassRef.name | quote }}
+        name: {{ include "tenant-onboarding.nodeClassRefName" . | quote }}
 {{- if and .Values.isolation.enabled .Values.isolation.taint.enabled }}
       taints:
         - key: {{ .Values.isolation.taint.key | quote }}

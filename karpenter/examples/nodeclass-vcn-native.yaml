@@ -1,0 +1,24 @@
+apiVersion: oci.oraclecloud.com/v1beta1
+kind: OCINodeClass
+metadata:
+  name: baseline-vcn-native
+spec:
+  nodeCompartmentId: <node_compartment_ocid>
+  shapeConfigs:
+    - ocpus: 2
+      memoryInGbs: 16
+  networkConfig:
+    primaryVnicConfig:
+      subnetConfig:
+        subnetId: <node_primary_subnet_ocid>
+    secondaryVnicConfigs:
+      - subnetConfig:
+          subnetId: <pod_secondary_subnet_ocid_or_same_subnet_ocid>
+        skipSourceDestCheck: true
+        ipCount: 16
+        vnicDisplayname: SVnic 0
+  volumeConfig:
+    bootVolumeConfig:
+      imageConfig:
+        imageType: OKEImage
+        imageId: <oke_image_ocid>

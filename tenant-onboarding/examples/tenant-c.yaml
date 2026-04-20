@@ -3,9 +3,24 @@ tenant:
   name: tenant-c
   namespace: tenant-c
 
+nodeClass:
+  create: true
+  spec:
+    nodeCompartmentId: <node_compartment_ocid>
+    shapeConfigs:
+      - ocpus: 2
+        memoryInGbs: 16
+    networkConfig:
+      primaryVnicConfig:
+        subnetConfig:
+          subnetId: <node_subnet_ocid>
+    volumeConfig:
+      bootVolumeConfig:
+        imageConfig:
+          imageType: OKEImage
+          imageId: <oke_image_ocid>
+
 nodePool:
-  nodeClassRef:
-    name: a1-baseline
   limits:
     cpu: "16"
     memory: 64Gi

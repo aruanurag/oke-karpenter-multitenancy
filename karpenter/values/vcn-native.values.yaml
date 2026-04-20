@@ -1,0 +1,13 @@
+settings:
+  clusterCompartmentId: "<cluster_compartment_ocid>"
+  vcnCompartmentId: "<vcn_compartment_ocid>"
+  # Private API server IP only (no scheme, no port), for example "10.0.0.3"
+  apiserverEndpoint: "<private_apiserver_ip>"
+  ociVcnIpNative: true
+
+serviceAccount:
+  create: true
+  name: karpenter
+
+controller:
+  replicas: 1

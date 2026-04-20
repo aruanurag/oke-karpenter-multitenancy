@@ -18,6 +18,22 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "tenant-onboarding.nodeClassName" -}}
+{{- if .Values.nodeClass.nameOverride -}}
+{{- .Values.nodeClass.nameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- printf "%s-nc" (include "tenant-onboarding.tenantId" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "tenant-onboarding.nodeClassRefName" -}}
+{{- if .Values.nodeClass.create -}}
+{{ include "tenant-onboarding.nodeClassName" . }}
+{{- else -}}
+{{ .Values.nodePool.nodeClassRef.name }}
+{{- end -}}
+{{- end -}}
+
 {{- define "tenant-onboarding.nodeLabelValue" -}}
 {{- default (include "tenant-onboarding.tenantId" .) .Values.isolation.nodeLabelValue -}}
 {{- end -}}

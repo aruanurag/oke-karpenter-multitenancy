@@ -1,0 +1,13 @@
+{{- if .Values.nodeClass.create }}
+{{- if not .Values.nodeClass.spec }}
+{{- fail "nodeClass.spec is required when nodeClass.create=true" }}
+{{- end }}
+apiVersion: oci.oraclecloud.com/v1beta1
+kind: OCINodeClass
+metadata:
+  name: {{ include "tenant-onboarding.nodeClassName" . }}
+  labels:
+    platform.example.com/tenant: {{ include "tenant-onboarding.tenantId" . | quote }}
+spec:
+{{ toYaml .Values.nodeClass.spec | indent 2 }}
+{{- end }}

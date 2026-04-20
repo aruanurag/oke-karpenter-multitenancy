@@ -1,0 +1,18 @@
+apiVersion: oci.oraclecloud.com/v1beta1
+kind: OCINodeClass
+metadata:
+  name: baseline-flannel
+spec:
+  nodeCompartmentId: <node_compartment_ocid>
+  shapeConfigs:
+    - ocpus: 2
+      memoryInGbs: 16
+  networkConfig:
+    primaryVnicConfig:
+      subnetConfig:
+        subnetId: <node_subnet_ocid>
+  volumeConfig:
+    bootVolumeConfig:
+      imageConfig:
+        imageType: OKEImage
+        imageId: <oke_image_ocid>
